@@ -8,7 +8,7 @@ from sphinx.writers.html5 import HTML5Translator
 
 class HTML5VerbosityTranslator(HTML5Translator):
     def starttag(self, node, tagname, suffix='\n', empty=False, **attributes):
-        if tagname in ['div', 'p', 'span', 'a']:
+        if tagname in ['div', 'p', 'span', 'a', 'code']:
             if int(node.get('verbosity', 1)) > 1:
                 attributes['data-verbosity'] = node['verbosity']
                 attributes['hidden'] = "true"
@@ -16,20 +16,21 @@ class HTML5VerbosityTranslator(HTML5Translator):
         return super().starttag(
             node, tagname, suffix=suffix, empty=empty, **attributes)
 
-    # def visit_literal_block(self, node):
-    #     self.body.append(f"<div data-verbosity={node.get('verbosity', 1)}>\n")
-    #     super().visit_literal_block(node)
+    def visit_literal_block(self, node):
+        self.body.append(f"<div data-verbosity={node.get('verbosity', 1)}>\n")
+        super().visit_literal_block(node)
 
-    # def depart_literal_block(self, node):
-    #     super().depart_literal_block(node)
-    #     self.body.append(f"\n<\div>")
+    def depart_literal_block(self, node):
+        super().depart_literal_block(node)
+        self.body.append(f"\n<\div>")
 
 
 slider_instance = """
 <form class="slidecontainer">
-    Verbosity level :
-    <input type="range" min="1" max="3" value="1" name="verbositySlider" id="verbosity_slider" onchange="changeVerbosity(this.value);">
-    <input type="number" maxlength="1" id="verbosity_value" min="1" max="3" value="1" oninput="changeVerbosity(this.value);" />
+    <b>Slide to adjust verbosity level&ensp;</b>
+    <input type="range" min="1" max="{0}" value="1" name="verbositySlider" id="verbosity_slider" onchange="changeVerbosity(this.value);">
+    &ensp;
+    <input type="number" maxlength="1" id="verbosity_value" min="1" max="{0}" value="1" oninput="changeVerbosity(this.value);" style="font-weight: bold"/>
 </form>
 """
 slider_onchange = """
@@ -99,7 +100,7 @@ class VerbositySlider(SphinxDirective):
     """
 
     has_content = False
-    required_arguments = 0
+    required_arguments = 1
     optional_arguments = 0
     final_argument_whitespace = False
 
@@ -109,7 +110,7 @@ class VerbositySlider(SphinxDirective):
 
     def run(self):
         # type: () -> List[nodes.Node]
-        return [verbosity_slider()]
+        return [verbosity_slider(max_verbosity=self.arguments[0].strip())]
 
 
 class VerbosityTransform(SphinxTransform):
@@ -217,7 +218,7 @@ def depart_verbosity(self, node):
 
 def visit_verbosity_slider(self, node):
     self.body.append(slider_onchange)
-    self.body.append(slider_instance)
+    self.body.append(slider_instance.format(node['max_verbosity']))
 
 
 def depart_verbosity_slider(self, node):
