@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='sphinx-verboser',
+    name='sphinx_verboser',
     version='0.0.1',
     license='BSD',
     author='Bogdan Vukobratovic',
