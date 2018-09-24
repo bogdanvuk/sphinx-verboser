@@ -17,12 +17,14 @@ class HTML5VerbosityTranslator(HTML5Translator):
             node, tagname, suffix=suffix, empty=empty, **attributes)
 
     def visit_literal_block(self, node):
-        self.body.append(f"<div data-verbosity={node.get('verbosity', 1)}>\n")
-        super().visit_literal_block(node)
-
-    def depart_literal_block(self, node):
-        super().depart_literal_block(node)
-        self.body.append(f"\n<\div>")
+        if int(node.get('verbosity', 1)) > 1:
+            self.body.append(f"<div data-verbosity={node.get('verbosity', 1)}>\n")
+        try:
+            super().visit_literal_block(node)
+        except nodes.SkipNode:
+            if int(node.get('verbosity', 1)) > 1:
+                self.body.append(f"\n</div>")
+            raise nodes.SkipNode
 
 
 slider_instance = """
