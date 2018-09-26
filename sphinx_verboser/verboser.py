@@ -16,9 +16,20 @@ class HTML5VerbosityTranslator(HTML5Translator):
         return super().starttag(
             node, tagname, suffix=suffix, empty=empty, **attributes)
 
+    def visit_title(self, node):
+        if int(node.get('verbosity', 1)) > 1:
+            self.body.append(f"<div hidden data-verbosity={node.get('verbosity', 1)}>\n")
+
+        super().visit_title(node)
+
+    def depart_title(self, node):
+        super().depart_title(node)
+        if int(node.get('verbosity', 1)) > 1:
+            self.body.append(f"\n</div>")
+
     def visit_literal_block(self, node):
         if int(node.get('verbosity', 1)) > 1:
-            self.body.append(f"<div data-verbosity={node.get('verbosity', 1)}>\n")
+            self.body.append(f"<div hidden data-verbosity={node.get('verbosity', 1)}>\n")
         try:
             super().visit_literal_block(node)
         except nodes.SkipNode:
