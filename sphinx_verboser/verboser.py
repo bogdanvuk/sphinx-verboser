@@ -8,10 +8,17 @@ from sphinx.writers.html5 import HTML5Translator
 
 class HTML5VerbosityTranslator(HTML5Translator):
     def starttag(self, node, tagname, suffix='\n', empty=False, **attributes):
-        if tagname in ['div', 'p', 'span', 'a', 'code']:
-            if int(node.get('verbosity', 1)) > 1:
-                attributes['data-verbosity'] = node['verbosity']
-                attributes['hidden'] = "true"
+        node_rec = node
+        verbosity = "1"
+        while node_rec:
+            if 'verbosity' in node_rec:
+                verbosity = node_rec['verbosity']
+                break
+            node_rec = node_rec.parent
+
+        if int(verbosity) > 1:
+            attributes['data-verbosity'] = verbosity
+            attributes['hidden'] = "true"
 
         return super().starttag(
             node, tagname, suffix=suffix, empty=empty, **attributes)
@@ -150,6 +157,7 @@ class VerbosityVisitor(nodes.NodeVisitor):
         self.default_setting = 1
         self.settings = []  # type: List[HighlightSetting]
         nodes.NodeVisitor.__init__(self, document)
+        self.bug = None
 
     def unknown_visit(self, node):
         # type: (nodes.Node) -> None
@@ -178,23 +186,22 @@ class VerbosityVisitor(nodes.NodeVisitor):
     def visit_verbosity(self, node):
         # type: (addnodes.highlightlang) -> None
         prev_setting = self.settings[-1]
+
         self.settings[-1] = node['verbosity']
         parent = node.parent
-
-        # import pdb
-        # pdb.set_trace()
 
         if parent.index(node) == 0:
             # node_rec = node
             # while node_rec and node_rec.parent.index(node_rec) == 0:
             # node_rec.parent['verbosity'] = node['verbosity']
             # node_rec = node_rec.parent
-            node.parent['verbosity'] = node['verbosity']
-            node = node.parent
-
+            parent['verbosity'] = node['verbosity']
+            if isinstance(parent, nodes.title):
+                parent.parent['verbosity'] = node['verbosity']
         else:
             node_i = parent.index(node)
             if 'verbosity' in parent:
+                prev_setting = parent['verbosity']
                 del parent['verbosity']
                 for c in (parent.children[:node_i]):
                     if isinstance(c, nodes.Text):
